@@ -43,6 +43,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     RaffleState private s_raffleState;
 
     /** events */
+    event RequestedRaffleWinner(uint256 indexed requestId);
     event PlayerEntered(address indexed player);
     event PickedWinner(address indexed winner);
 
@@ -84,7 +85,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return (upkeepNeeded, "");
     }
 
-    function pickWinner(bytes calldata /*performData*/) public {
+    function performUpkeep(bytes calldata /*performData*/) public {
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded)
             revert Raffle__UpkeepNotNeeded(
@@ -108,10 +109,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
                 )
             })
         );
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256 /* requestId */,
         uint256[] calldata randomWords
     ) internal override {
         // Effects (internal contract state)
@@ -132,5 +134,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
     /** getters */
     function getEntranceFee() external view returns (uint256) {
         return i_entranceFee;
+    }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getRafflePlayer(uint256 index) external view returns (address) {
+        return s_players[index];
     }
 }
