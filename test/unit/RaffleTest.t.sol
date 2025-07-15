@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.19;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console, console2} from "forge-std/Test.sol";
 import {Raffle} from "src/Raffle.sol";
 import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
@@ -54,6 +54,12 @@ contract RaffleTest is Test {
         _;
     }
 
+    modifier timeHasPassed() {
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
+    }
+
     function testRaffleRevertWhenYouDontPay() public {
         vm.prank(PLAYER);
         vm.expectRevert(Raffle.Raffle__NotEnoughFunds.selector);
@@ -72,12 +78,76 @@ contract RaffleTest is Test {
     }
 
     function testRevertPlayerWhenRaffleIsClosed() public enteredRaffle {
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-        raffle.performUpkeep("");
-
-        vm.expectRevert();
+        vm.expectRevert(Raffle.Raffle__Closed.selector);
         vm.prank(PLAYER);
         raffle.enterRaffle{value: entranceFee}();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              CHECKUP KEEP
+    //////////////////////////////////////////////////////////////*/
+
+    function testCheckUpKeepReturnFalseIfInsufficientBalance()
+        public
+        timeHasPassed
+    {
+        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        assert(upKeepNeeded == false);
+    }
+
+    function testCheckUpKeepReturnFalseIfRaffleIsntOpen()
+        public
+        enteredRaffle
+        timeHasPassed
+    {
+        raffle.performUpkeep("");
+        (bool upkeepNeeded, ) = raffle.checkUpkeep(""); // bool upkeep = raffle.checkUpkeep("");
+
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckUpKeepReturnFalseIfEnoughTimeHasntPass()
+        public
+        enteredRaffle
+    {
+        (bool upKeepNeeded, ) = raffle.checkUpkeep("");
+        assert(!upKeepNeeded);
+    }
+
+    function testCheckUpKeepReturnTrueIfConditionsMet()
+        public
+        enteredRaffle
+        timeHasPassed
+    {
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+        assert(upkeepNeeded);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                             PERFORM UPKEEP
+    //////////////////////////////////////////////////////////////*/
+
+    function testPerformUpKeepRunsOnlyIfCheckUpkeepTrue()
+        public
+        enteredRaffle
+        timeHasPassed
+    {
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpKeepRevertIfCheckUpkeepFalse() public enteredRaffle {
+        uint256 balance = entranceFee;
+        uint256 length = 1;
+        Raffle.RaffleState state = raffle.getRaffleState();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Raffle.Raffle__UpkeepNotNeeded.selector,
+                balance,
+                length,
+                state
+            )
+        );
+        raffle.performUpkeep("");
     }
 }

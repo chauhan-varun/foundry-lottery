@@ -4,13 +4,11 @@ pragma solidity ^0.8.19;
 import {Script} from "forge-std/Script.sol";
 import {Raffle} from "../src/Raffle.sol";
 import {HelperConfig} from "../script/HelperConfig.s.sol";
-import {Interactions} from "../script/Interactions.s.sol";
+import {Interactions, FundSubscription, AddConsumer} from "./Interactions.s.sol";
 
 contract DeployRaffle is Script {
     function run() external {
-        // vm.startBroadcast();
-        // // Raffle raffle = new Raffle();
-        // vm.stopBroadcast();
+        deployContract();
     }
 
     function deployContract() public returns (Raffle, HelperConfig) {
@@ -19,10 +17,19 @@ contract DeployRaffle is Script {
 
         if (config.subscriptionId == 0) {
             (config.subscriptionId, config.vrfCoordinator) = new Interactions()
-                .createSubscription(config.vrfCoordinator);
+                .createSubscription(config.vrfCoordinator, config.account);
+
+            // funt it
+            FundSubscription fundSubscription = new FundSubscription();
+            fundSubscription.fundSubscription(
+                config.vrfCoordinator,
+                config.subscriptionId,
+                config.link,
+                config.account
+            );
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(config.account);
         Raffle raffle = new Raffle(
             config.entranceFee,
             config.interval,
@@ -32,6 +39,14 @@ contract DeployRaffle is Script {
             config.keyHash
         );
         vm.stopBroadcast();
+
+        AddConsumer addConsumer = new AddConsumer();
+        addConsumer.addConsumer(
+            address(raffle),
+            config.vrfCoordinator,
+            config.subscriptionId,
+            config.account
+        );
 
         return (raffle, helperConfig);
     }
