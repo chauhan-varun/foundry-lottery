@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title A Raffle contract
@@ -11,7 +12,7 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
  * @dev Raffle contract
  */
 
-contract Raffle is VRFConsumerBaseV2Plus {
+contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     /** errors */
     error Raffle__NotEnoughFunds();
     error Raffle__Closed();
@@ -91,7 +92,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         bool hasBalance = address(this).balance > 0;
 
         upkeepNeeded = timeHasPassed && isOpen && hasPlayers && hasBalance;
-        return (upkeepNeeded, "");
+        return (upkeepNeeded, "0x0");
     }
 
     function performUpkeep(bytes calldata /*performData*/) public {
@@ -130,14 +131,16 @@ contract Raffle is VRFConsumerBaseV2Plus {
         address payable winner = s_players[winnerIndex];
         s_recentWinner = winner;
 
+        s_players = new address payable[](0);
         s_raffleState = RaffleState.Open;
         s_lastTimeStamp = block.timestamp;
-        s_players = new address payable[](0);
         emit PickedWinner(winner);
 
         // interactions (external contract interactions)
         (bool sucess, ) = winner.call{value: address(this).balance}("");
-        if (!sucess) revert Raffle__TransactionFailed();
+        if (!sucess) {
+            revert Raffle__TransactionFailed();
+        }
     }
 
     /** getters */
@@ -151,5 +154,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
 
     function getRafflePlayer(uint256 index) external view returns (address) {
         return s_players[index];
+    }
+
+    function getLastTimeStamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
     }
 }

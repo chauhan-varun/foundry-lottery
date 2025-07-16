@@ -7,12 +7,9 @@ import {HelperConfig} from "../script/HelperConfig.s.sol";
 import {Interactions, FundSubscription, AddConsumer} from "./Interactions.s.sol";
 
 contract DeployRaffle is Script {
-    function run() external {
-        deployContract();
-    }
-
-    function deployContract() public returns (Raffle, HelperConfig) {
+    function run() external returns (Raffle, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
+        AddConsumer addConsumer = new AddConsumer();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
         if (config.subscriptionId == 0) {
@@ -27,6 +24,7 @@ contract DeployRaffle is Script {
                 config.link,
                 config.account
             );
+            helperConfig.setConfig(block.chainid, config);
         }
 
         vm.startBroadcast(config.account);
@@ -40,7 +38,6 @@ contract DeployRaffle is Script {
         );
         vm.stopBroadcast();
 
-        AddConsumer addConsumer = new AddConsumer();
         addConsumer.addConsumer(
             address(raffle),
             config.vrfCoordinator,
