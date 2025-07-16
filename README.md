@@ -1,66 +1,157 @@
-## Foundry
+# Provably Fair Raffle Smart Contract
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A decentralized and verifiably random raffle system built on Ethereum using Solidity, Foundry, and Chainlink VRF + Automation.
 
-Foundry consists of:
+## Overview
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This project implements a trustless raffle where:
+- Users can enter by paying an entrance fee
+- A verifiably random winner is selected after a time interval
+- The winner receives all the accumulated ETH
+- The drawing process is fully automated and tamper-proof
 
-## Documentation
+## Features
 
-https://book.getfoundry.sh/
+- **Transparent**: All code is open source and verifiable
+- **Fair**: Uses Chainlink VRF (Verifiable Random Function) for true randomness
+- **Automated**: Leverages Chainlink Automation for time-based execution
+- **Gas-efficient**: Optimized for minimal gas usage
 
-## Usage
+## Technology Stack
 
-### Build
+- **Solidity** - Smart contract development
+- **Foundry** - Testing framework
+- **Chainlink VRF** - Verifiable randomness
+- **Chainlink Automation** - Decentralized execution
 
-```shell
-$ forge build
+## Project Structure
+
+### Smart Contracts
+
+- `src/Raffle.sol` - Main raffle contract implementation
+
+### Scripts
+
+- `script/DeployRaffle.s.sol` - Deployment script for the Raffle contract
+- `script/HelperConfig.s.sol` - Configuration helper for different networks
+- `script/Interactions.s.sol` - Scripts for interacting with the deployed contract
+
+### Tests
+
+- `test/unit/RaffleTest.t.sol` - Comprehensive unit tests for the Raffle contract
+  - Tests for entering the raffle
+  - Tests for checkUpkeep functionality
+  - Tests for performUpkeep functionality
+  - Tests for winner selection and prize distribution
+  - and more...
+
+## Getting Started
+
+### Prerequisites
+
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) - For building and testing
+- [Forge](https://book.getfoundry.sh/reference/forge/forge) - For compiling and deploying contracts
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/chauhan-varun/foundry-lottery.git
+cd raffle
 ```
 
-### Test
-
-```shell
-$ forge test
+2. Install dependencies
+```bash
+forge install
 ```
 
-### Format
-
-```shell
-$ forge fmt
+3. Build the project
+```bash
+forge build
 ```
 
-### Gas Snapshots
+### Testing
 
-```shell
-$ forge snapshot
+Run the test suite:
+```bash
+forge test
 ```
 
-### Anvil
-
-```shell
-$ anvil
+For verbose output:
+```bash
+forge test -vvv
 ```
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+For specific test files:
+```bash
+forge test --match-path test/unit/RaffleTest.t.sol -vvv
 ```
 
-### Cast
+### Deployment
 
-```shell
-$ cast <subcommand>
+1. Setup environment variables (create a `.env` file):
+```
+PRIVATE_KEY=your_private_key
+SEPOLIA_RPC_URL=your_sepolia_rpc_url
+ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+2. Deploy to testnet:
+```bash
+forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
 ```
+
+## Contract Details
+
+### Raffle.sol
+
+The main contract with the following functionality:
+- `enterRaffle()`: Enter the raffle by sending ETH
+- `checkUpkeep()`: Check if it's time to perform a drawing
+- `performUpkeep()`: Initiate the random number request
+- `fulfillRandomWords()`: Process the random result and select a winner
+
+### Script Details
+
+#### DeployRaffle.s.sol
+Handles the deployment of the Raffle contract with proper configuration based on the network.
+
+#### HelperConfig.s.sol
+Provides network-specific configurations including:
+- VRF Coordinator addresses
+- Gas lane values
+- Subscription IDs
+- Entrance fees
+- Interval settings
+
+#### Interactions.s.sol
+Contains scripts for interacting with the deployed contract:
+- Creating VRF subscriptions
+- Funding subscriptions
+- Adding consumers to subscriptions
+
+### Test Details
+
+The test suite covers:
+- Contract initialization state
+- Raffle entrance requirements and validations
+- Player recording functionality
+- Event emission verification
+- Upkeep checks under various conditions
+- Random number fulfillment and winner selection
+- Prize distribution
+
+## Configuration
+
+The contract is configurable with:
+- Entrance fee
+- Drawing interval
+- VRF parameters (gas lane, callback gas limit, etc.)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Author
+
+Varun Chauhan

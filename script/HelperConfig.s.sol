@@ -103,7 +103,7 @@ contract HelperConfig is CodeConstants, Script {
         sepoliaNetworkConfig = NetworkConfig({
             subscriptionId: 115725534712828529745080958691772271492614837277766883773564631599985910000344, // Use the successfully created subscription ID from your logs
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
-            automationUpdateInterval: 30, // 30 seconds
+            automationUpdateInterval: 120, // 30 seconds
             raffleEntranceFee: 0.01 ether,
             callbackGasLimit: 500000, // 500,000 gas
             vrfCoordinatorV2_5: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
