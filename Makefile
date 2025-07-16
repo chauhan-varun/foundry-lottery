@@ -42,6 +42,13 @@ endif
 deploy:
 	@forge script script/DeployRaffle.s.sol:DeployRaffle $(NETWORK_ARGS)
 
+deploy-anvil: 
+	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url http://localhost:8545 --account defaultKey --broadcast -vvvv
+
+
+deploy-sepolia:
+	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url $(SEPOLIA_RPC_URL) --account key1 --broadcast --verify $(ETHERSCAN_API_KEY) -vvvv
+
 createSubscription:
 	@forge script script/Interactions.s.sol:CreateSubscription $(NETWORK_ARGS)
 
