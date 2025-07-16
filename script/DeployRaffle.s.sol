@@ -2,49 +2,42 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
+import {HelperConfig} from "./HelperConfig.s.sol";
 import {Raffle} from "../src/Raffle.sol";
-import {HelperConfig} from "../script/HelperConfig.s.sol";
-import {Interactions, FundSubscription, AddConsumer} from "./Interactions.s.sol";
+import {AddConsumer, CreateSubscription, FundSubscription} from "./Interactions.s.sol";
 
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
-        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig helperConfig = new HelperConfig(); // This comes with our mocks!
         AddConsumer addConsumer = new AddConsumer();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
         if (config.subscriptionId == 0) {
-            (config.subscriptionId, config.vrfCoordinator) = new Interactions()
-                .createSubscription(config.vrfCoordinator, config.account);
+            CreateSubscription createSubscription = new CreateSubscription();
+            (config.subscriptionId, config.vrfCoordinatorV2_5) =
+                createSubscription.createSubscription(config.vrfCoordinatorV2_5, config.account);
 
-            // funt it
             FundSubscription fundSubscription = new FundSubscription();
             fundSubscription.fundSubscription(
-                config.vrfCoordinator,
-                config.subscriptionId,
-                config.link,
-                config.account
+                config.vrfCoordinatorV2_5, config.subscriptionId, config.link, config.account
             );
+
             helperConfig.setConfig(block.chainid, config);
         }
 
         vm.startBroadcast(config.account);
         Raffle raffle = new Raffle(
-            config.entranceFee,
-            config.interval,
-            config.vrfCoordinator,
             config.subscriptionId,
+            config.gasLane,
+            config.automationUpdateInterval,
+            config.raffleEntranceFee,
             config.callbackGasLimit,
-            config.keyHash
+            config.vrfCoordinatorV2_5
         );
         vm.stopBroadcast();
 
-        addConsumer.addConsumer(
-            address(raffle),
-            config.vrfCoordinator,
-            config.subscriptionId,
-            config.account
-        );
-
+        // We already have a broadcast in here
+        addConsumer.addConsumer(address(raffle), config.vrfCoordinatorV2_5, config.subscriptionId, config.account);
         return (raffle, helperConfig);
     }
 }
